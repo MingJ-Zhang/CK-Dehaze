@@ -1,0 +1,120 @@
+
+
+# general settings
+name: test
+model_type: ImageRestorationModel
+scale: 1
+num_gpu: 6  
+manual_seed: 42
+dist: true  
+
+datasets:
+  train:
+    name: residein_Dehaze_train
+    type: PairedImageDataset  # Use standard paired dataset for simplicity
+    
+    dataroot_lq:    # Hazy images
+    dataroot_gt:   # Clear images
+    
+    gt_size: 128  # Training patch size, adjust based on your GPU memory
+    use_flip: true  # Enable horizontal flip augmentation
+    use_rot: true   # Enable rotation augmentation
+    geometric_augs: true
+    
+    io_backend:
+      type: disk
+    
+    # data loader
+    use_shuffle: true
+    num_worker_per_gpu: 4  
+    batch_size_per_gpu: 8  
+    dataset_enlarge_ratio: 1
+    prefetch_mode: ~
+
+  val:
+    name: residein_Dehaze_val
+    type: PairedImageDataset  # Same type for validation
+    dataroot_lq:   # Same data for validation
+    dataroot_gt: 
+    io_backend:
+      type: disk
+
+network_g:
+  type: CKUnet  # Using the best variant from the paper
+  img_channel: 3
+  width: 48
+  enc_blk_nums: [4, 6, 6]
+  middle_blk_num: 8
+  dec_blk_nums: [6, 6, 4]
+  cross_attn_inner_dims: [1024, 1024, 1024]
+  middle_cross_attn_inner_dim: 1024
+  cross_attn_heads: [1, 2, 4]
+  middle_cross_attn_heads: 8
+  patch_sizes: [4, 4, 4]
+  middle_patch_size: 2
+  restormer_heads: [1, 2, 4]
+  restormer_middle_heads: 8
+  clip_model_name: openai/clip-vit-large-patch14
+
+# path
+path:
+  pretrain_network_g: ~  # No pretrain for now, can add later
+  strict_load_g: true
+  resume_state: ~
+
+# training settings
+train:
+  optim_g:
+    type: AdamW
+    lr: !!float 1e-3  # Learning rate
+    weight_decay: !!float 1e-3
+    betas: [0.9, 0.999]
+
+  scheduler:
+    type: TrueCosineAnnealingLR
+    T_max: 100000  # Total iterations for cosine annealing
+    eta_min: !!float 1e-7  # Minimum learning rate
+
+  total_iter: 100000  # Total training iterations
+  warmup_iter: -1 # no warm up
+
+  grad_clip:
+    max_norm: 0.01
+    norm_type: 2
+
+  # Loss functions
+  pixel_opt:
+    type: L1Loss  # L1 loss for pixel-level reconstruction
+    loss_weight: 1.0
+    reduction: mean
+
+  fft_loss_opt:
+    type: FFTLoss  # Frequency domain loss
+    loss_weight: 0.1
+    reduction: 'mean'
+
+val:
+  val_freq: 5000  # Validation frequency (every 5000 iterations)
+  save_img: true  # Save validation images
+
+  metrics:
+    psnr:
+      type: calculate_psnr_aio
+      data_range: 1.0
+    ssim:
+      type: calculate_ssim_aio
+      data_range: 1.0
+
+# logging settings
+logger:
+  print_freq: 10  
+  save_checkpoint_freq: 5000  
+  use_tb_logger: true  
+  wandb:
+    project: ~  
+    resume_id: ~
+
+# dist training settings
+dist_params:
+  backend: nccl
+  port: 29555

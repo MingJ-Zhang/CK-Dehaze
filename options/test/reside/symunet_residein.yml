@@ -1,0 +1,63 @@
+
+
+# general settings
+name: test
+model_type: ImageRestorationModel
+scale: 1
+num_gpu: 1  # 测试时通常只需要1块GPU
+manual_seed: 42
+
+# dataset and data loader settings
+datasets:
+  test_residein_dehaze:
+    name: residein_Dehaze_Test
+    type: PairedImageDataset
+    dataroot_lq:   # 雾图
+    dataroot_gt:   # 清晰图
+    io_backend:
+      type: disk
+
+# network structures
+network_g:
+  type: CKUnet
+  img_channel: 3
+  width: 48
+  enc_blk_nums: [4, 6, 6]
+  middle_blk_num: 8
+  dec_blk_nums: [6, 6, 4]
+  cross_attn_inner_dims: [1024, 1024, 1024]
+  middle_cross_attn_inner_dim: 1024
+  cross_attn_heads: [1, 2, 4]
+  middle_cross_attn_heads: 8
+  patch_sizes: [4, 4, 4]
+  middle_patch_size: 2
+  restormer_heads: [1, 2, 4]
+  restormer_middle_heads: 8
+  clip_model_name: openai/clip-vit-large-patch14
+
+# path
+path:
+  pretrain_network_g: experiments/CKUnet-residein-Dehaze/models/net_g_latest.pth  # 使用训练好的模型
+  strict_load_g: true
+  resume_state: ~
+
+# validation settings
+val:
+  save_img: true  # 保存测试结果图片
+  suffix: ~  # 添加到文件名的后缀
+  grids: false  # 不使用grid模式
+
+  metrics:
+    psnr:
+      type: calculate_psnr_aio
+      crop_border: 0
+      data_range: 1.0
+    ssim:
+      type: calculate_ssim_aio
+      crop_border: 0
+      data_range: 1.0
+
+# dist training settings (测试时可能不需要，但保留以防万一)
+dist_params:
+  backend: nccl
+  port: 29500
