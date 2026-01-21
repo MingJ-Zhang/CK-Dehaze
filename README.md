@@ -1,4 +1,4 @@
-# CK-Dehaze
+# CK-Dehaze: Chebyshev-KAN based Symmetric U-Net for Single Image Dehazing
 
 ## Prerequisites
 
