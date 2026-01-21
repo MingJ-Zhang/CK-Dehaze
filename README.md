@@ -10,7 +10,7 @@
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/SymUNet.git
+   git clone https://github.com/MingJ-Zhang/CK-Dehaze
    cd SymUNet
    ```
 
@@ -57,6 +57,9 @@ python basicsr/test.py -opt options/test/reside/symunet_residein.yml
 ```
 
 The restored images will be saved in the `results/` directory, and metrics (PSNR, SSIM) will be calculated if ground truth is provided.
+
+## Results visualization
+[baiduYun](https://pan.baidu.com/s/1UQTvBI6mwIk7GbtBbYNPug?pwd=1tr6)
 
 ## Acknowledgements
 
